@@ -1,4 +1,7 @@
 <div align="left">
+  <img src="resources/EN_FundedbytheEU_RGB_POS.png" width="500">  
+  <img src="resources/EVERYFISH.png" width="100">
+  &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="resources/UEA1289.png" width="120">
 </div>
 <div>&nbsp;</div>
@@ -34,10 +37,8 @@ $ pip install -v -e .
 thus any local modifications made to the code will take effect without reinstallation.
 3. Dependencies  
 You do not need a GPU. See requirements.txt for details of the development environment. 
-4. Download the single whole fish (sample) database:  
-<a href="https://www.dropbox.com/scl/fi/ztd86xj3k8xdw00btku8y/single_whole_fish_sample.zip?rlkey=ti5wl3xgrctr3snfjqf48ri5p&st=zn84mssc&dl=0" download>Download ZIP</a>   
-Note: click the link, or paste it into the search bar in a web browser. 
-Then, click the downward arrow in the upper-right corner and choose "Or continue with download only" to download a file without an account.
+4. Download the single whole fish database:  
+<a href="https://zenodo.org/records/23238609" download>Download ZIP</a>   
 5. Create a symbolic link to the database: ./data -> single_whole_fish  
 Note: If ./data is not linked you will need to edit the \[DEFAULT] section of "./configs/config.ini"  
 6. Run the demo
@@ -56,7 +57,7 @@ Contributers are welcome to clone/modify/share the package subject to the terms 
 This project is released under the [GNU General Puplic License V3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) 
 
 ## Acknowledgement
-We acknowledge funding from the European Unions Horizon Europe research and innovation programme under grant agreement number 101059892.  
+[EVERYFISH](https://everyfish.eu/) acknowledge funding from the European Unions Horizon Europe research and innovation programme under grant agreement number 101059892.  
 Contributers:  
 Dr. Geoff French <brittix1023@gmail.com>  
 Dr. Ruth Veevers  
