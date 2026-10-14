@@ -223,3 +223,9 @@ data/
 
 # Work Dirs
 work_dirs/
+
+# Visual Studio workspace state
+.vs/
+
+# Secret
+.secret/
