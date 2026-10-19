@@ -35,6 +35,12 @@ backgrounds: %(data_root)s/backgrounds/
 ## \[demo.example]
 \[demo.example] includes params. for "./demo/demo.py"
 
+### device
+```Python
+# torch device for warping fish (default cuda:0); cpu keeps the demo off the GPU
+device: cpu
+```
+
 ### source_belts
 ```Python
 # Single whole fish database imagery is harvested from a number of vessels (belts). 
@@ -42,6 +48,7 @@ backgrounds: %(data_root)s/backgrounds/
 # Note: The sample database only includes imagery from 'belt_F'
 source_belts: ['belt_F']
 ```
+
 ### source_species
 ```python
 # Single whole fish database imagery includes a variety of fish species. 
@@ -99,14 +106,38 @@ output_folder: ./work_dirs/synth_demo
 The compositor will (optionally) also produce occlusion masks and figures. 
 supp_output: {'fig_folder': None, 'occ_folder': None}
 ```
+
+
+
+### placement
+```python
+# placement: 'iou_spec' or 'random'
+# placement controls which of the following sections is loaded 
+placement: random
+```
+
+## \[placement.random]
+
+\[placement.random] defines parameters for random placement of fish i.e. fish are acattered randomly on the canvas.
+
 ### fish_per_image
 ```python
-# Number of individuals composited.
+# Number of individuals composited per image.
 # Either [a] or [a, b], where a,b determines a random number of individuals. 
 # Note: IoU is measured between the two most recent composited individuals.
 # If fish_per_image > 2 the IoU between ALL individuals cannot be guaranteed.
 fish_per_image: [2]
 ```
+
+### num_images
+```python
+# number of composited images 
+num_images: 25
+```
+
+## \[placement.iou_spec]
+
+\[placement.iou_spec] defines parameters for iou specified placement of fish. Note: Only 2 fish per image allowed.
  
 ### iou_mode
 ```python
@@ -124,11 +155,11 @@ iou_mode: ['hbbox_iou']
 tgt_iou: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
 ```
 
-### images_per_tgt_iou
+### num_images
 ```python
 # Number of images per IoU bin
 # Note: Consider the size of the database when setting this param.
-images_per_tgt_iou: 1
+num_images: 25
 ```
 
 ### rotation_mode
@@ -164,7 +195,15 @@ split: [80, 10, 10]
 [convert2coco.example]
 name: convert_dataset_to_coco_format
 data_root: ./work_dirs/synth_demo/belt_F/all/test
-#  comment out next parameter to omit conversion (and show annotation)
 out_folder = ./work_dirs/synth_demo/belt_F/all/test/coco
+
+```
+---
+## \[convert2everyfish_coco.example]
+```python
+[convert2everyfish_coco.example]
+name: convert_dataset_to_coco_format
+data_root: ./work_dirs/synth_demo/belt_F/all/test
+out_folder = ./work_dirs/synth_demo/belt_F/all/test/everyfish_coco
 
 ```

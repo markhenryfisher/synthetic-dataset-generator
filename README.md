@@ -11,14 +11,23 @@
 <img src="resources/example_6.png" width="100"> 
 <img src="resources/example_4.png" width="100"> 
 <img src="resources/example_5.png" width="100"> 
+<img src="resources/example_6.png" width="100"> 
+</div>
+<div>&nbsp;</div>
+<div align="center">
+<img src="resources/example_7.png" width="100"> 
+<img src="resources/example_8.png" width="100"> 
+<img src="resources/example_9.png" width="100"> 
+<img src="resources/example_10.png" width="100"> 
+<img src="resources/example_11.png" width="100"> 
+<img src="resources/example_12.png" width="100"> 
 </div>
 
 # Project Title
 EVERYFISH SYNTHETIC-DATASET-GENERATOR (COMPOSITOR)
 ## Description
 A Python library for generating 'synthetic' (composited) imagery for training and testing AI models targeting fisheries REM video surveilance applications. 
-The placement of individual fish in the composited image is parameterised. This allows training/validation/test datasets to be generated with specific 
-intersection-over-union (IoU) relationships.  These are useful for exploring the robustness of AI models with regard to occlusion.
+
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
@@ -26,6 +35,7 @@ intersection-over-union (IoU) relationships.  These are useful for exploring the
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowlegement](#ackknowledgement)
+
 ## Installation
 1. Clone the repository:
   git clone https://<username>@git.imr.no/everyfish/synthetic-dataset-generator 
@@ -43,6 +53,15 @@ You do not need a GPU. See requirements.txt for details of the development envir
 Note: If ./data is not linked you will need to edit the \[DEFAULT] section of "./configs/config.ini"  
 6. Run the demo
 $ python ./demo/demo.py
+
+## Useage
+Composited images are composed of individual fish placed on a background canvas, together with associated .json annotations. There are two placement modes:  
+1. Random.  
+2. IoU specific. Note: This mode only supports TWO fish per image.  
+
+A selection of example images are shown above. In mode 2, the placement of individual fish in the composited image is parameterised. This allows training/validation/test datasets to be generated with a specific intersection-over-union (IoU) relationship.  These are useful for exploring the robustness of AI models with regard to occlusion. 
+
+The file `inventory.csv` stores details of all fish in the database. To ensure individuals are unique in training, validation and test datasets, the inventory is split into `train.csv`, `val.csv` and `test.csv`, and `demo.py` creates train, val, test datasets by selecting fish from the associated `train/val/test.csv`.    
 
 ## Documentation
 - [learn about config](docs/customize_config.md)

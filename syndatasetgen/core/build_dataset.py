@@ -34,15 +34,20 @@ class CompositeDataset():
         self.show_output = params.getboolean('show', False)
         self.output_folder = params.get('output_folder', None)
         self.dest_belts = params['dest_belts']
-        self.images_per_tgt_iou = images_per_tgt_iou = int(params['images_per_tgt_iou'])
-        self.fish_per_image = fish_per_image = eval(params['fish_per_image'])
+        self.num_images = num_images = int(params.get('num_images', 0))
+        # self.images_per_tgt_iou = images_per_tgt_iou = int(params.get('images_per_tgt_iou', 0))
+        self.fish_per_image = fish_per_image = eval(params.get('fish_per_image', '[2]'))
 
-        self.rotation_mode = params['rotation_mode']      
-        self.rotation = eval(params['rotation'])
+        self.rotation_mode = params.get('rotation_mode', 'random')
+        self.rotation = eval(params.get('rotation', '[0, 0]'))
 
-        self.op_mode = params['op_mode']
+        self.op_mode = params.get('op_mode', 'train')
         self.area_thresh = int(params.get('area_thresh', 100))
-        self.iou_mode = eval(params['iou_mode'])
+        # torch device for the fish warp; 'cpu' keeps the generator off the GPU
+        self.device = params.get('device', 'cuda:0')
+        self.placement = params['placement']
+        self.iou_mode = params.get('iou_mode', 'obbox_iou')
+        
         # check tgt_iou values are ok
         tgt_iou = eval(params.get('tgt_iou', '[0.0]'))
         ok_iou = [round(x * 0.1, 1) for x in range(6)]
@@ -67,7 +72,7 @@ class CompositeDataset():
         self.fish_iter = FishRepo(splits_folder, 
                                 fname=infile, 
                                 fish_per_image = fish_per_image,
-                                images_per_tgt_iou = images_per_tgt_iou,
+                                images_per_tgt_iou = num_images,
                                 belts=source_belts, 
                                 species=source_species)
 
@@ -113,25 +118,33 @@ class CompositeDataset():
         return bg
     
     def write_output(self, img_i, tgt_iou, img, lbl_img, c_fish, occ_info, debug=False):
-        iou_name = 'iou_' + str(int(tgt_iou*10))
-        # filename = iou_name + 'image_{}'.format(img_i)
-        filename = 'P{}{num:05d}'.format(int(tgt_iou*10), num=img_i)
-        iou_output_folder = os.path.join(self.output_folder, self.belt_name, iou_name, self.op_mode)
-        all_output_folder = os.path.join(self.output_folder, self.belt_name, 'all', self.op_mode)
+        output_folder_list = []
+        if tgt_iou:
+            iou_name = 'iou_' + str(int(tgt_iou*10))
+            # filename = iou_name + 'image_{}'.format(img_i)
+            filename = 'P{}{num:05d}'.format(int(tgt_iou*10), num=img_i)
+            iou_output_folder = os.path.join(self.output_folder, self.belt_name, iou_name, self.op_mode)
+            output_folder_list.append(iou_output_folder)
+        else:
+            # Randomly placed fish; no iou_spec
+            filename = 'R{num:06d}'.format(num=img_i)
 
-        for output_folder in [iou_output_folder, all_output_folder]:
+        all_output_folder = os.path.join(self.output_folder, self.belt_name, 'all', self.op_mode)
+        output_folder_list.append(all_output_folder)    
+
+        for output_folder in output_folder_list:
             
             frames_folder = os.path.join(output_folder, self.IMAGES_FOLDER_NAME)
             labels_folder = os.path.join(output_folder, self.LABELS_FOLDER_NAME)
             dota_annotation_folder = os.path.join(output_folder, self.DOTA_ANNOTATION_FOLDER_NAME)
-
 
             # write image with json labels and DOTA annotation txt
             self.output_writer.write_coco(img, 
                                           lbl_img, 
                                           filename, 
                                           frames_folder, 
-                                          labels_folder)
+                                          labels_folder,
+                                          c_fish)
             self.output_writer.write_dota(img,
                             get_obbs(lbl_img, c_fish),
                             filename,
@@ -139,7 +152,7 @@ class CompositeDataset():
                             dota_annotation_folder, # annotation_folder
                             c_fish)
 
-        output_folder = iou_output_folder
+        output_folder = output_folder_list[-1]
         # output some occlusion data (masks + indv. fish)
         if self.supp_output['occ_folder']:
             occlusion_folder = os.path.join(output_folder, self.supp_output['occ_folder'])
@@ -149,12 +162,12 @@ class CompositeDataset():
         if self.supp_output['fig_folder'] and self.op_mode in ['test']:
             fig_folder = os.path.join(output_folder, self.supp_output['fig_folder'] )
             os.makedirs(fig_folder, exist_ok=True)
-            obb_tgt = 'iou: {}'.format(tgt_iou) if self.iou_mode[0] == 'obbox_iou' else ''
-            hbb_tgt = 'iou: {}'.format(tgt_iou) if self.iou_mode[0] == 'hbbox_iou' else ''
-            if 'obbox_iou' in self.iou_mode:
+            obb_tgt = 'iou: {}'.format(tgt_iou) if self.iou_mode == 'obbox_iou' else ''
+            hbb_tgt = 'iou: {}'.format(tgt_iou) if self.iou_mode == 'hbbox_iou' else ''
+            if self.iou_mode == 'obbox_iou':
                 obbs = get_obbs(lbl_img, c_fish)
                 vis.show_obbs(img, obbs, '{} {}'.format(img_i, obb_tgt), fig_folder)
-            if 'hbbox_iou' in self.iou_mode:
+            if self.iou_mode == 'hbbox_iou':
                 boxes, masks = label_image_to_gt(lbl_img)
                 vis.show_bboxes(img, boxes, '{} {}'.format(img_i, hbb_tgt), fig_folder)
 
@@ -167,8 +180,7 @@ class CompositeDataset():
         
         
     
-    def composite_images(self, belt_name, tgt_iou=None, debug=False):
-        num_images = self.images_per_tgt_iou
+    def composite_images(self, belt_name, num_images, tgt_iou=None, debug=False):
         
         self.belt_name = belt_name
         belt_bg = self.bg_img(belt_name)
@@ -180,14 +192,15 @@ class CompositeDataset():
             if debug:
                 print(f"Image: {img_i}")
 
-            # set num                
+            # set num_fish                
             if len(self.fish_per_image) == 2:
-                num_fish = np.random.randint(self.num_fish_per_image[0], self.num_fish_per_image[1])
+                num_fish = np.random.randint(self.fish_per_image[0], self.fish_per_image[1])
             else:
                 num_fish = self.fish_per_image[0]
                 
             # instatiate CompositeImage object
-            Cimg = CompositeImage(                
+            Cimg = CompositeImage(
+                self.placement,                
                 num_fish,
                 self.fish_iter,
                 belt_bg,
@@ -195,7 +208,8 @@ class CompositeDataset():
                 self.rotation_mode,
                 self.rotation,
                 area_thresh=self.area_thresh,
-                tgt_iou = tgt_iou
+                tgt_iou = tgt_iou,
+                device=self.device
                 )
             
             img, lbl_img, c_fish, occ_info = Cimg.run()
@@ -212,8 +226,12 @@ class CompositeDataset():
         return
         
     
-    def run_placement(self, belt_name, debug=True):
-        for iou in eval(self.params['tgt_iou']):
-            self.composite_images(belt_name, tgt_iou=iou)
+    def run_placement(self, belt_name):
+        # pdb.set_trace()
+        if self.placement == 'random':
+            self.composite_images(belt_name, self.num_images)    
+        else:    
+            for iou in eval(self.params['tgt_iou']):
+                self.composite_images(belt_name, self.num_images, tgt_iou=iou)
             
         return

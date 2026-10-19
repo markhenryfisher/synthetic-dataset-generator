@@ -25,7 +25,7 @@ from ..torchvision_ops import boxes as box_ops
 from ..synth_utils.utils import inter_union, pad_img_array,\
         morph_opening, approx_contour
 from ..synth_utils.obb_utils import obbox_iou
-
+    
 
 def render_lbl_individual(label_img, tf_info, debug=False):
     """
@@ -44,12 +44,16 @@ def render_lbl_individual(label_img, tf_info, debug=False):
         tf_info['rot_theta'],
         tf_info['flip'])               
     
+    
     if debug:
         vis.display_img(label_img, 'transformed')
         
         
     # Find contours to get the bounding box of the mask
     contours, _ = cv2.findContours(label_img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    assert contours, '__render_lbl_individual: No contours!' 
+        
 
     # there may be more than one contour
     temp=[]
@@ -257,7 +261,8 @@ class CompositeImage():
     """
     """
     MAX_REJECTS = 10
-    def __init__(self, 
+    def __init__(self,
+                 placement,
                  num_fish,
                  fish_iter,
                  belt_bg_img,
@@ -265,7 +270,8 @@ class CompositeImage():
                  rotation_mode,
                  rotation,
                  area_thresh=100,
-                 tgt_iou=[0.0]):
+                 tgt_iou=[0.0],
+                 device='cuda:0'):
         
         self.num_fish = num_fish
         self.fish_iter = fish_iter
@@ -273,11 +279,13 @@ class CompositeImage():
         self.area_thresh = area_thresh
         self.rotation_mode = rotation_mode
         self.rotation = rotation
-        self.compositor=Compositor(belt_bg_img, 
+        self.compositor=Compositor(belt_bg_img,
+                                   placement,
                                    num_fish,
                                    iou_mode,
                                    tgt_iou,
-                                   random.choice([-16, +16])) # divisible by 2
+                                   random.choice([-16, +16]), # divisible by 2
+                                   device=device)
         self.fish_buff = self.__init_buff()
         self.alt_idx_max = self.alt_idx = 1
         self.fail_cnt = 0
@@ -316,27 +324,32 @@ class CompositeImage():
         its a bit of a dogs dinner - sorry
         if you want specific composits then use rotation_mode 'explicit'
         and give a list of rotation angles
-        """        
+        """ 
         if self.rotation_mode in ['explicit']:
             assert len(self.rotation) == self.num_fish, 'rotation format error'
             self.compositor.rotation = self.rotation[self.fish_buff.ptr]
         elif self.rotation_mode in ['random']:
             if self.fish_buff.ptr == 0:
+                # rotation for first fish
                 if self.compositor.iou_mode[0] in ['hbbox_iou']:
                     # mhf 18.11.25 fish are now oriented
                     self.compositor.rotation = random.choice([0, 90, -90, 180])                  
                 else:
                     # mhf 11.11.25 change rotation from (0, 90)                    
                     self.compositor.rotation = random.uniform(-90, +90)
-
-                
+               
             else:
-                if self.compositor.tgt_iou < 0.2:
-                    # limit rotation to ensure whole fish is on canvas
-                    self.compositor.rotation = self.compositor.rotation[0] + random.uniform(-30, +30)
-                else:
-                    # mhf 11.11.25 change rotation from (0, 90)                    
+                # rotation for subsequent fish
+                if self.compositor.placement == 'random':
                     self.compositor.rotation = random.uniform(-90, +90)
+                else:                    
+                    if self.compositor.tgt_iou and self.compositor.tgt_iou > 0.1:
+                        # mhf 11.11.25 change rotation from (0, 90)                    
+                        self.compositor.rotation = random.uniform(-90, +90)
+                    else:
+                        # limit rotation to ensure whole fish is on canvas
+                        self.compositor.rotation = self.compositor.rotation[0] + random.uniform(-30, +30)
+                    
         else:
             raise ValueError('Unknown rotation_mode')
             
@@ -444,8 +457,11 @@ class Occlusion:
 class  Compositor:
     """ 
     """
-    def __init__(self, bg_img, num_fish, iou_mode, tgt_iou, delta):
-        self.torch_device = 'cuda:0'
+    def __init__(self, bg_img, placement, num_fish, iou_mode, tgt_iou, delta,
+                 device='cuda:0'):
+        # torch device for the fish warp (affine_grid / grid_sample); 'cpu'
+        # keeps the generator off the GPU
+        self.torch_device = device
         self.bg_img = bg_img
         self.c_img = bg_img.copy()
 
@@ -454,6 +470,8 @@ class  Compositor:
                            bg_img.shape[0])
         self.crop_size = self.image_size
         self.c_lbl_img = np.zeros((bg_img.shape[0], bg_img.shape[1]), dtype=np.int32)
+        self.placement = placement
+        self.num_fish = num_fish # Total number of fish to be placed 
         self._rotation = []
         self.flip = False # Warning: do not flip obboxs!
         self.iou_mode = iou_mode
@@ -461,7 +479,7 @@ class  Compositor:
         self.bboxes = torch.zeros(num_fish, 4, dtype=torch.int)
         self.fish_label_int = 0
         self._scalefactor = [1.0, 1.0]
-        self.position = None
+        self._position = None
         # choose increments for y position
         self.delta = delta
         # crop_info (bbox relating to individual)
@@ -478,7 +496,20 @@ class  Compositor:
         self.fish_label_int = 0
         self.position = None
         self.c_fish = {}
-        
+
+
+    @property
+    def position(self):
+        return self._position 
+
+    @position.setter
+    def position(self, value):
+        # mhf 17.10.26 clamp position to canvas
+        x, y = value
+        max_x, max_y = self.image_size
+        x = np.clip(x, 0, max_x-1)
+        y = np.clip(y, 0, max_y-1)
+        self._position = [x, y]
         
     @property 
     def scalefactor(self):
@@ -509,13 +540,13 @@ class  Compositor:
         
     def __compute_iou_matrix(self, lbl_img):
         # calculate iou matrix
-        if self.iou_mode[0] in ['hbbox_iou']:
+        if self.iou_mode in ['hbbox_iou']:
             boxes, masks = label_image_to_gt(lbl_img)
             boxes = torch.from_numpy(boxes.astype(np.int32))
             iou_mat = box_ops.box_iou(boxes, boxes)
         # elif self.iou_mode in ['mask_iou']:
         #     iou_mat = mask_iou(lbl_img)
-        elif self.iou_mode[0] in ['obbox_iou']:
+        elif self.iou_mode in ['obbox_iou']:
             iou_mat = obbox_iou(lbl_img)
         else:
             raise ValueError("Unknown iou_mode: {}".format(self.iou_mode))
@@ -599,11 +630,10 @@ class  Compositor:
                 #                                               False,
                 #                                               debug=False)
                 self.tf_info['rot_theta'] = -math.radians(alpha)
-                self.tf_info['flip'] = False
+                self.tf_info['flip'] = False                    
                 c_label_img, _, _ = render_lbl_individual(c_label_img,
                                                           self.tf_info)
-                
-                
+                                
             n_iter += 1
                 
         return  result
@@ -697,7 +727,7 @@ class  Compositor:
 
             x, y = position 
             dx, dy = step_x * math.cos(trans_dirn), step_y * math.sin(trans_dirn)
-            position = x + round(dx), y + round(dy)                     
+            position = x + round(dx), y + round(dy)
             iter_cnt += 1
         
         return result       
@@ -729,10 +759,15 @@ class  Compositor:
             print('Area = {}'.format(fish['Area']))
             print('Rotate Angle = {:.2f} deg.'.format(math.degrees(rot_theta)))
 
-        # position of first placement
-        if self.position is None:
-            self.position = [self.image_size[1]//2, self.image_size[0]//2]
-            result = 0
+        if self.position is None and self.placement == 'iou_spec':
+            # position of first 'iou_spec' placement  
+            self.position = [self.image_size[1]//2, self.image_size[0]//2]            
+        elif self.placement == 'random':
+            # random position on canvas
+            max_x, max_y = self.image_size          
+            self.position = [random.randint(100, max_x-100), 
+                             random.randint(100, max_y-100)]    
+        result = 0
 
         #transform_info
         self.tf_info = {
@@ -741,10 +776,8 @@ class  Compositor:
             "position": self.position,
             "rot_theta": rot_theta,
             "flip": self.flip}        
-            
         c_label_img, xf, self.crop_info = render_lbl_individual(label_img,
                                                                 self.tf_info)
-
         if debug:
             vis.display_img(c_label_img, 'cropped')
             # assess_approx_contour(c_label_img.astype(np.uint8))
@@ -752,14 +785,17 @@ class  Compositor:
             # morph_opening(c_label_img.astype(np.uint8))
             # approx_contour(c_label_img.astype(np.uint8))
        
-        if self.fish_label_int > 0:
+        if self.fish_label_int > 0 and self.placement == 'iou_spec':
+            # refine rotation and placement to meet IoU spec.
             result = self.__refine_rotation(c_label_img)
             if result == 0:
                 self.tf_info['rot_theta'] =  (self.rotation[self.fish_label_int] * math.pi / 180) - angle
                 self.tf_info['flip'] = False
+
                 c_label_img, xf, self.crop_info = render_lbl_individual(label_img,
                                                         self.tf_info)                
                 result = self.__refine_translation(c_label_img)
+
 
         if result == 0:
             c_label_img = morph_opening(c_label_img.astype(np.uint8))
@@ -785,10 +821,9 @@ class  Compositor:
             self.c_img = self.__render_img_canvas(c_fish_img, c_label_img, self.position) 
             self.c_lbl_img = self.__render_lbl_canvas(c_label_img, c_label_img, self.position)
 
-    
             if debug:
-                vis.display_img(self.c_img, 'c_img_{} iou: {:.2f}'.format(self.fish_label_int, self.tgt_iou))
-                vis.display_img(self.c_lbl_img, 'c_lbl_img_{} iou: {:.2f}'.format(self.fish_label_int, self.tgt_iou))
+                vis.display_img(self.c_img, 'L855_c_img_{}'.format(self.fish_label_int))
+                vis.display_img(self.c_lbl_img, 'L856_c_lbl_img_{}'.format(self.fish_label_int))
 
 
             self.__update_c_fish('fish{}'.format(self.fish_label_int), 

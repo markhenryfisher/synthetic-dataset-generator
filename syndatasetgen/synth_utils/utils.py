@@ -18,7 +18,7 @@ from ..debug_utils import visualize as vis
 
 
 TORCH_DEVICE = 'cuda:0'
-WHOLE_FISH_CLASS = 'whole_fish'
+# WHOLE_FISH_CLASS = 'whole_fish'
 IMAGE_SIZE = (512, 512)
 CENTRE = [256, 256]
 
@@ -62,7 +62,8 @@ class OutputWriter:
                      label_image,
                      filename,
                      frame_folder, 
-                     labels_folder):
+                     labels_folder,
+                     c_fish):
 
         self.__write_img(image, frame_folder, filename)
     
@@ -72,8 +73,10 @@ class OutputWriter:
         ids = [i for i in list(range(1,max(label_image.flatten())+1 )) ]
         tool_labels = labelling_tool.ImageLabels.from_label_image_maintain_instances(label_image, ids)
         for i, label in enumerate(tool_labels.labels):
+            key = 'fish' + str(i)
+            fish = c_fish[key]
             label.object_id = int(label.classification)
-            label.classification = WHOLE_FISH_CLASS
+            label.classification = fish['species']
         jason_labels = tool_labels.to_json()
         os.makedirs(labels_folder, exist_ok=True)
         with open(os.path.join(labels_folder, '{}__labels.json'.format(filename)), 'w') as f:
@@ -102,7 +105,7 @@ class OutputWriter:
         dota_ann_list = []
         for obb, fish in zip(obbs, c_fish):
             this_fish=c_fish[fish]
-            difficulty = 0 if this_fish['tgt_iou'] < 0.1 else 1
+            difficulty = 0 if this_fish['tgt_iou'] and this_fish['tgt_iou'] < 0.1 else 1
             arr_flat_str = ' '.join(map(str, obb.flatten()))
             dota_ann_str = arr_flat_str + ' ' + this_fish['species'] + ' ' + str(difficulty) + '\n'
             dota_ann_list.append(dota_ann_str)

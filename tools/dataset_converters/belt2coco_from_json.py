@@ -23,12 +23,13 @@ import numpy as np
 import cv2
 import random
 import time
+import json
 from PIL import Image
 from datetime import datetime
-from mmengine.fileio import load, dump
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import syndatabasegen.misc_utils.file_utils as file_utils
+from syndatasetgen.misc_utils import file_utils
+from syndatasetgen.constants import CLS_FISH_CLASSES
 
 # minimum area of a region (smaller areas raise an error)
 MIN_AREA = 20
@@ -267,8 +268,9 @@ def convert2coco(img_list, img_folder, out_file, debug=False):
         img = Image.open(img_path).convert("RGB")
         width, height = img.size 
 
+        with open(lbl_path, 'r', encoding='utf-8') as file:
+                    labels = json.load(file)  # Parse JSON into Python dict/list
         
-        labels = load(lbl_path)
         if debug:
             if len(labels) != 2:
                 print('idx: {}, File name: {}'.format(idx, img_filename))
@@ -279,7 +281,6 @@ def convert2coco(img_list, img_folder, out_file, debug=False):
         out_fish = 0
         for i, label in enumerate(labels):
 
-            # label = labels[i]
             has_poly = False
             regions = convert_label(np.array(img), label, debug=not(out_file))
             if not(out_file):
@@ -309,7 +310,7 @@ def convert2coco(img_list, img_folder, out_file, debug=False):
             data_anno = dict(
                 image_id=idx,
                 id=obj_count,
-                category_id=0,
+                category_id=CLS_FISH_CLASSES.index(label['label_class']),
                 bbox=[x_min, y_min, x_max - x_min, y_max - y_min],
                 area=(x_max - x_min) * (y_max - y_min),
                 segmentation=seg,
@@ -328,7 +329,7 @@ def convert2coco(img_list, img_folder, out_file, debug=False):
             images.append(dict(id=idx, file_name=jpg_filename, height=height, width=width))
             # save jpg image 
             fullfile = os.path.join(os.path.dirname(out_file), jpg_filename)
-            assert not os.path.isfile('fullfile'), '{} Exists!'.format(fullfile)
+            # assert not os.path.isfile(fullfile), '{} Exists!'.format(fullfile)
             img.save(fullfile)
         else:
             time.sleep(2)
@@ -336,19 +337,21 @@ def convert2coco(img_list, img_folder, out_file, debug=False):
     if debug:
         print('Obj cnt: {}'.format(obj_count))
 
+    temp = []        
+    for i, species in enumerate(CLS_FISH_CLASSES):
+        temp.append(dict(name=species, id=i))
+
      
     coco_format_json = dict(
     info={"description": "CFISH 2025 Dataset","url": "http://uea.ac.uk","version": "1.0","year": 2025,"contributor": "School of Computing Sciences","date_created": today_yyyymmdd()},
     images=images,
     annotations=annotations,
-    categories=[{
-        'id': 0,
-        'name': 'fish_unknown'
-    }])
+    categories=temp)
     
     if out_file:
-        assert not os.path.isfile(out_file), '{} Exists!'.format(out_file)
-        file_utils.save_dict_to_json(coco_format_json, out_file)        
+        # assert not os.path.isfile(out_file), '{} Exists!'.format(out_file)
+        with open(out_file, "w") as json_file:
+            json.dump(coco_format_json, json_file)
 
     
 if __name__ == '__main__':
