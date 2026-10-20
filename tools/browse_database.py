@@ -5,8 +5,8 @@ Created on Fri Jun 19 12:12:25 2026
 @author: mhf
 
 Spyder command line...
-runfile('S:/mhf/GitLab/synthetic-dataset-generator/tools/browse_database.py', \
-                 wdir='S:/mhf/GitLab/synthetic-dataset-generator')
+runfile('S:/mhf/GitHub/synthetic-dataset-generator/tools/browse_database.py', \
+                 wdir='S:/mhf/GitHub/synthetic-dataset-generator')
 
 """
 import configparser

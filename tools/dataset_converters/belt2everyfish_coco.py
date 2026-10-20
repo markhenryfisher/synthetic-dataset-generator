@@ -6,8 +6,8 @@ catch monitor (cm) to everyfish_coco dataset converter
 @author: Hang.Zhou@uea.ac.uk, Mark.Fisher@uea.ac.uk
 
 Spyder command line...
-runfile('S:/mhf/GitLab/synthetic-dataset-generator/tools/dataset_converters/belt2everyfish_coco.py', \
-                 wdir='S:/mhf/GitLab/synthetic-dataset-generator')
+runfile('S:/mhf/GitHub/synthetic-dataset-generator/tools/dataset_converters/belt2everyfish_coco.py', \
+                 wdir='S:/mhf/GitHub/synthetic-dataset-generator')
 """
 import configparser
 import os

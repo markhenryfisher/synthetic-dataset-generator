@@ -215,7 +215,7 @@ stack_data @ file:///C:/miniconda3/conda-bld/stack_data_1757067056654/work
 superqt @ file:///C:/miniconda3/conda-bld/superqt_1758274750290/work
 sympy @ file:///C:/b/abs_f1v7nwa6vp/croot/sympy_1756713483242/work
 # Editable Git install with no remote (syndatasetgen==1.0.0)
--e s:\mhf\gitlab\synthetic-dataset-generator
+-e s:\mhf\github\synthetic-dataset-generator
 tabulate==0.9.0
 termcolor==3.1.0
 terminaltables==3.1.10

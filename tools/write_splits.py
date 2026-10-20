@@ -7,8 +7,8 @@ Created on Tue Jun 16 12:54:48 2026
 @author: mhf
 
 Spyder command line...
-runfile('S:/mhf/GitLab/synthetic-dataset-generator/tools/write_splits.py', \
-                 wdir='S:/mhf/GitLab/synthetic-dataset-generator')
+runfile('S:/mhf/GitHub/synthetic-dataset-generator/tools/write_splits.py', \
+                 wdir='S:/mhf/GitHub/synthetic-dataset-generator')
 """
 import configparser
 from syndatasetgen.synth_utils.repo_mgt import FishRepo 

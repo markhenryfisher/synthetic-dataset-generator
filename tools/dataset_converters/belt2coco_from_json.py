@@ -12,8 +12,8 @@ Created on Thu Feb  1 10:44:30 2024
 last update: 20.06.26
 
 Spyder command line...
-runfile('S:/mhf/GitLab/synthetic-dataset-generator/tools/dataset_converters/belt2coco_from_json.py', \
-                 wdir='S:/mhf/GitLab/synthetic-dataset-generator')
+runfile('S:/mhf/GitHub/synthetic-dataset-generator/tools/dataset_converters/belt2coco_from_json.py', \
+                 wdir='S:/mhf/GitHub/synthetic-dataset-generator')
 
 """
 # import argparse
