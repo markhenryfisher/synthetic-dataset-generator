@@ -195,4 +195,4 @@ data/
 work_dirs/
 
 # Secret 
-.secret
+.secret/
