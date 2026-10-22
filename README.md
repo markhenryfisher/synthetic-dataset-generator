@@ -7,11 +7,11 @@
 <div>&nbsp;</div>
 <div align="center">
 <img src="resources/example_0.png" width="100"> 
+<img src="resources/example_1.png" width="100"> 
 <img src="resources/example_2.png" width="100"> 
-<img src="resources/example_6.png" width="100"> 
+<img src="resources/example_3.png" width="100"> 
 <img src="resources/example_4.png" width="100"> 
 <img src="resources/example_5.png" width="100"> 
-<img src="resources/example_6.png" width="100"> 
 </div>
 <div>&nbsp;</div>
 <div align="center">
