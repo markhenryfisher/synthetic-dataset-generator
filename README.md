@@ -6,6 +6,7 @@
 </div>
 <div>&nbsp;</div>
 <div align="center">
+<b>HBBs: parameterised IoU</b><br>
 <img src="resources/example_0.png" width="100"> 
 <img src="resources/example_1.png" width="100"> 
 <img src="resources/example_2.png" width="100"> 
@@ -15,12 +16,33 @@
 </div>
 <div>&nbsp;</div>
 <div align="center">
+<b>HBBs: random positions</b><br>
 <img src="resources/example_7.png" width="100"> 
 <img src="resources/example_8.png" width="100"> 
 <img src="resources/example_9.png" width="100"> 
 <img src="resources/example_10.png" width="100"> 
 <img src="resources/example_11.png" width="100"> 
 <img src="resources/example_12.png" width="100"> 
+</div>
+<div>&nbsp;</div>
+<div align="center">
+<b>OBBs: parameterised IoU</b><br>
+<img src="resources/example_obb_0.png" width="100"> 
+<img src="resources/example_obb_1.png" width="100"> 
+<img src="resources/example_obb_2.png" width="100"> 
+<img src="resources/example_obb_3.png" width="100"> 
+<img src="resources/example_obb_4.png" width="100"> 
+<img src="resources/example_obb_5.png" width="100"> 
+</div>
+<div>&nbsp;</div>
+<div align="center">
+<b>OBBs: random positions</b><br>
+<img src="resources/example_obb_6.png" width="100"> 
+<img src="resources/example_obb_7.png" width="100"> 
+<img src="resources/example_obb_8.png" width="100"> 
+<img src="resources/example_obb_9.png" width="100"> 
+<img src="resources/example_obb_10.png" width="100"> 
+<img src="resources/example_obb_11.png" width="100"> 
 </div>
 
 # Project Title
@@ -59,7 +81,7 @@ Composited images are composed of individual fish placed on a background canvas,
 1. Random.  
 2. IoU specific. Note: This mode only supports TWO fish per image.  
 
-A selection of example images are shown above. In mode 2, the placement of individual fish in the composited image is parameterised. This allows training/validation/test datasets to be generated with a specific intersection-over-union (IoU) relationship.  These are useful for exploring the robustness of AI models with regard to occlusion. 
+A selection of example composited images are shown above. The tool produces annotation masks (COCO), horizontal bounding boxes (COCO) and oriented bounding boxes (DOTA). It will also (optionally) produce occlusion masks that may be used to train amodal segmentation models. In mode 2, the placement of individual fish in the composited image is parameterised. This allows training/validation/test datasets to be generated with a specific intersection-over-union (IoU) relationship.  These are useful for exploring the robustness of AI models with regard to occlusion. 
 
 The file `inventory.csv` stores details of all fish in the database. To ensure individuals are unique in training, validation and test datasets, the inventory is split into `train.csv`, `val.csv` and `test.csv`, and `demo.py` creates train, val, test datasets by selecting fish from the associated `train/val/test.csv`.    
 
