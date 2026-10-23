@@ -119,7 +119,7 @@ class CompositeDataset():
     
     def write_output(self, img_i, tgt_iou, img, lbl_img, c_fish, occ_info, debug=False):
         output_folder_list = []
-        if tgt_iou:
+        if tgt_iou is not None:
             iou_name = 'iou_' + str(int(tgt_iou*10))
             # filename = iou_name + 'image_{}'.format(img_i)
             filename = 'P{}{num:05d}'.format(int(tgt_iou*10), num=img_i)
