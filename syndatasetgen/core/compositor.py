@@ -331,7 +331,7 @@ class CompositeImage():
         elif self.rotation_mode in ['random']:
             if self.fish_buff.ptr == 0:
                 # rotation for first fish
-                if self.compositor.iou_mode[0] in ['hbbox_iou']:
+                if self.compositor.iou_mode in ['hbbox_iou']:
                     # mhf 18.11.25 fish are now oriented
                     self.compositor.rotation = random.choice([0, 90, -90, 180])                  
                 else:

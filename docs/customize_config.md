@@ -143,8 +143,9 @@ num_images: 25
 ```python
 # Determines how IoU is measured. 
 # It can either be measured between horizontal bounding boxes (HBB) 
-# or oriented bounding boxes (OBB). 
-iou_mode: ['hbbox_iou'] 
+# or oriented bounding boxes (OBB): 'hbbox_iou' or 'obbox_iou'. 
+# Default (and configs/config.ini): obbox_iou. A plain value, not a list. 
+iou_mode: obbox_iou 
 ```
 
 ### tgt_iou
