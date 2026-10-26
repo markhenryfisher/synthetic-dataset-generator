@@ -2,7 +2,7 @@
 """
 Shpw belt data annotation (UEA json annotation format).
 e.g. Usage: 
-    python belt_data_browser.py "./data/ruth/datasets/belt_data_natural" "MRV SCOTIA" 
+    python belt_data_browser.py "./data/belt_data_natural" "belt_F"
 
 Created on Thu Feb  1 10:44:30 2024
 

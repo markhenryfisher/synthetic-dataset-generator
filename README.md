@@ -60,7 +60,7 @@ A Python library for generating 'synthetic' (composited) imagery for training an
 
 ## Installation
 1. Clone the repository:
-  git clone https://<username>@git.imr.no/everyfish/synthetic-dataset-generator 
+  git clone https://github.com/markhenryfisher/synthetic-dataset-generator 
 2. Install syndatagen package:  
 $ cd synthetic-dataset-generator  
 $ pip install -v -e .  
