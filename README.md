@@ -1,3 +1,4 @@
+<div>&nbsp;</div>
 <div align="left">
   <img src="resources/EN_FundedbytheEU_RGB_POS.png" width="500">  
   <img src="resources/EVERYFISH.png" width="100">
@@ -7,7 +8,10 @@
 <div>&nbsp;</div>
 <div align="center">
 <b>HBBs: parameterised IoU</b><br>
+<!---
 <img src="resources/example_0.png" width="100"> 
+-->
+<img src="resources/synth_video_5fps.gif" width="100" alt="Synthetic composites being built, one fish at a time: label masks, then the rendered image">
 <img src="resources/example_1.png" width="100"> 
 <img src="resources/example_2.png" width="100"> 
 <img src="resources/example_3.png" width="100"> 
