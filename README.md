@@ -1,4 +1,3 @@
-<div>&nbsp;</div>
 <div align="left">
   <img src="resources/EN_FundedbytheEU_RGB_POS.png" width="500">  
   <img src="resources/EVERYFISH.png" width="100">
